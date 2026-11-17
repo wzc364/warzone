@@ -1,0 +1,341 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public commander profile, rank progression, customization loadout, and virtual economy inventory.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "commanderName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32
+        },
+        "portraitId": {
+          "type": "string",
+          "enum": ["vanguard", "sentinel", "spectre"]
+        },
+        "armorStyle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "visorColor": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 16
+        },
+        "camoPalette": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "buildingTheme": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "bannerEmblem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "tracerColor": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 16
+        },
+        "victoryEmote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "rankTier": {
+          "type": "string",
+          "enum": ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Grandmaster"]
+        },
+        "mmr": {
+          "type": "number"
+        },
+        "wins": {
+          "type": "number"
+        },
+        "losses": {
+          "type": "number"
+        },
+        "credits": {
+          "type": "number"
+        },
+        "streakDay": {
+          "type": "number"
+        },
+        "lastClaimDayKey": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "unlockedCosmetics": {
+          "type": "array"
+        },
+        "dailyMissions": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "commanderName",
+        "portraitId",
+        "armorStyle",
+        "visorColor",
+        "camoPalette",
+        "bannerEmblem",
+        "tracerColor",
+        "victoryEmote",
+        "rankTier",
+        "mmr",
+        "wins",
+        "losses",
+        "credits",
+        "streakDay",
+        "lastClaimDayKey",
+        "unlockedCosmetics",
+        "dailyMissions",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPrivateAccount": {
+      "title": "UserPrivateAccount",
+      "description": "Isolated PII document for authenticated user email and account metadata.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "updatedAt"]
+    },
+    "CommunityReplay": {
+      "title": "CommunityReplay",
+      "description": "Published RTS match replay shared to the global community feed.",
+      "type": "object",
+      "properties": {
+        "replayId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32
+        },
+        "authorRankTier": {
+          "type": "string",
+          "enum": ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Grandmaster"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 80
+        },
+        "mapId": {
+          "type": "string",
+          "enum": ["iron_valley", "storm_delta", "frost_ridge"]
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["skirmish", "ranked_1v1"]
+        },
+        "durationSec": {
+          "type": "number"
+        },
+        "winnerSide": {
+          "type": "string",
+          "enum": ["blue", "red"]
+        },
+        "likesCount": {
+          "type": "number"
+        },
+        "timelineEvents": {
+          "type": "array"
+        },
+        "summaryStats": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "replayId",
+        "authorUid",
+        "authorName",
+        "authorRankTier",
+        "title",
+        "mapId",
+        "mode",
+        "durationSec",
+        "winnerSide",
+        "likesCount",
+        "timelineEvents",
+        "summaryStats",
+        "createdAt"
+      ]
+    },
+    "ReplayLike": {
+      "title": "ReplayLike",
+      "description": "User upvote record for a shared community replay.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "replayId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "replayId", "createdAt"]
+    },
+    "MultiplayerRoom": {
+      "title": "MultiplayerRoom",
+      "description": "Competitive 1v1 multiplayer match room state synced in Firestore.",
+      "type": "object",
+      "properties": {
+        "roomId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hostUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hostName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32
+        },
+        "hostMmr": {
+          "type": "number"
+        },
+        "guestUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "guestName": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "guestMmr": {
+          "type": "number"
+        },
+        "mapId": {
+          "type": "string",
+          "enum": ["iron_valley", "storm_delta", "frost_ridge"]
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["ranked_1v1", "custom_1v1"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["waiting", "active", "finished"]
+        },
+        "winnerUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "roomId",
+        "hostUid",
+        "hostName",
+        "hostMmr",
+        "guestUid",
+        "guestName",
+        "guestMmr",
+        "mapId",
+        "mode",
+        "status",
+        "winnerUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Commander public profile, rank MMR, cosmetics, and daily progress."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateAccount" },
+      "description": "Isolated PII account data strictly accessible to the owner."
+    },
+    "/communityReplays/{replayId}": {
+      "schema": { "$ref": "#/entities/CommunityReplay" },
+      "description": "Global community replay feed with timeline events and match stats."
+    },
+    "/communityReplays/{replayId}/likes/{userId}": {
+      "schema": { "$ref": "#/entities/ReplayLike" },
+      "description": "Atomic likes subcollection for community replays."
+    },
+    "/multiplayerRooms/{roomId}": {
+      "schema": { "$ref": "#/entities/MultiplayerRoom" },
+      "description": "Competitive 1v1 multiplayer lobby and match state metadata."
+    }
+  }
+}

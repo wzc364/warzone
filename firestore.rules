@@ -1,0 +1,307 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidRankTier(tier) {
+      return tier in ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Grandmaster'];
+    }
+
+    function isValidMapId(mapId) {
+      return mapId in ['iron_valley', 'storm_delta', 'frost_ridge', 'scorched_canyon', 'obsidian_caldera', 'emerald_archipelago'];
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid', 'commanderName', 'portraitId', 'armorStyle', 'visorColor',
+          'camoPalette', 'bannerEmblem', 'tracerColor', 'victoryEmote',
+          'rankTier', 'mmr', 'wins', 'losses', 'credits', 'streakDay',
+          'lastClaimDayKey', 'unlockedCosmetics', 'dailyMissions', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'commanderName', 'portraitId', 'armorStyle', 'visorColor',
+          'camoPalette', 'buildingTheme', 'bannerEmblem', 'tracerColor', 'victoryEmote',
+          'rankTier', 'mmr', 'wins', 'losses', 'credits', 'streakDay',
+          'lastClaimDayKey', 'unlockedCosmetics', 'dailyMissions', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && data.commanderName is string && data.commanderName.size() >= 2 && data.commanderName.size() <= 32
+        && data.portraitId in ['vanguard', 'sentinel', 'spectre']
+        && data.armorStyle is string && data.armorStyle.size() >= 1 && data.armorStyle.size() <= 32
+        && data.visorColor is string && data.visorColor.size() >= 4 && data.visorColor.size() <= 16
+        && data.camoPalette is string && data.camoPalette.size() >= 1 && data.camoPalette.size() <= 32
+        && (!('buildingTheme' in data) || (data.buildingTheme is string && data.buildingTheme.size() >= 1 && data.buildingTheme.size() <= 32))
+        && data.bannerEmblem is string && data.bannerEmblem.size() >= 1 && data.bannerEmblem.size() <= 32
+        && data.tracerColor is string && data.tracerColor.size() >= 4 && data.tracerColor.size() <= 16
+        && data.victoryEmote is string && data.victoryEmote.size() >= 1 && data.victoryEmote.size() <= 40
+        && isValidRankTier(data.rankTier)
+        && data.mmr is number && data.mmr >= 0 && data.mmr <= 10000
+        && data.wins is number && data.wins >= 0 && data.wins <= 100000
+        && data.losses is number && data.losses >= 0 && data.losses <= 100000
+        && data.credits is number && data.credits >= 0 && data.credits <= 10000000
+        && data.streakDay is number && data.streakDay >= 0 && data.streakDay <= 365
+        && data.lastClaimDayKey is string && data.lastClaimDayKey.size() <= 16
+        && data.unlockedCosmetics is list && data.unlockedCosmetics.size() >= 1 && data.unlockedCosmetics.size() <= 100
+        && data.unlockedCosmetics[0] is string
+        && data.dailyMissions is list && data.dailyMissions.size() <= 10
+        && (data.dailyMissions.size() == 0 || data.dailyMissions[0] is map)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivate(data) {
+      return data.keys().hasAll(['uid', 'email', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.email is string && data.email.size() <= 160
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCommunityReplay(data) {
+      return data.keys().hasAll([
+          'replayId', 'authorUid', 'authorName', 'authorRankTier', 'title',
+          'mapId', 'mode', 'durationSec', 'winnerSide', 'likesCount',
+          'timelineEvents', 'summaryStats', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'replayId', 'authorUid', 'authorName', 'authorRankTier', 'title',
+          'mapId', 'mode', 'durationSec', 'winnerSide', 'likesCount',
+          'timelineEvents', 'summaryStats', 'createdAt'
+        ])
+        && isValidId(data.replayId) && data.replayId.size() <= 64
+        && isValidId(data.authorUid)
+        && data.authorName is string && data.authorName.size() >= 2 && data.authorName.size() <= 32
+        && isValidRankTier(data.authorRankTier)
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 80
+        && isValidMapId(data.mapId)
+        && data.mode in ['skirmish', 'ranked_1v1']
+        && data.durationSec is number && data.durationSec >= 1 && data.durationSec <= 7200
+        && data.winnerSide in ['blue', 'red']
+        && data.likesCount is number && data.likesCount >= 0 && data.likesCount <= 1000000
+        && data.timelineEvents is list && data.timelineEvents.size() >= 1 && data.timelineEvents.size() <= 400
+        && data.timelineEvents[0] is map
+        && data.summaryStats is map
+        && data.createdAt is timestamp;
+    }
+
+    function isValidReplayLike(data, replayId, userId) {
+      return data.keys().hasAll(['userId', 'replayId', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'replayId', 'createdAt'])
+        && isValidId(data.userId) && data.userId == userId
+        && isValidId(data.replayId) && data.replayId == replayId
+        && data.createdAt is timestamp;
+    }
+
+    function isValidMultiplayerRoom(data) {
+      return data.keys().hasAll([
+          'roomId', 'hostUid', 'hostName', 'hostMmr', 'guestUid',
+          'guestName', 'guestMmr', 'mapId', 'mode', 'status',
+          'winnerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'roomId', 'hostUid', 'hostName', 'hostMmr', 'guestUid',
+          'guestName', 'guestMmr', 'mapId', 'mode', 'status',
+          'winnerUid', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.roomId) && data.roomId.size() >= 4 && data.roomId.size() <= 64
+        && isValidId(data.hostUid)
+        && data.hostName is string && data.hostName.size() >= 2 && data.hostName.size() <= 32
+        && data.hostMmr is number && data.hostMmr >= 0 && data.hostMmr <= 10000
+        && data.guestUid is string && data.guestUid.size() <= 128
+        && data.guestName is string && data.guestName.size() <= 32
+        && data.guestMmr is number && data.guestMmr >= 0 && data.guestMmr <= 10000
+        && isValidMapId(data.mapId)
+        && data.mode in ['ranked_1v1', 'custom_1v1']
+        && data.status in ['waiting', 'active', 'finished']
+        && data.winnerUid is string && data.winnerUid.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Public commander profiles (no PII) — readable for leaderboard
+    match /users/{userId} {
+      allow get: if isValidId(userId);
+      allow list: if resource.data.mmr >= 0;
+
+      allow create: if isVerified()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming())
+        && incoming().uid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerified()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'commanderName', 'portraitId', 'armorStyle', 'visorColor',
+            'camoPalette', 'buildingTheme', 'bannerEmblem', 'tracerColor', 'victoryEmote', 'updatedAt'
+          ])
+          ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'credits', 'unlockedCosmetics', 'dailyMissions', 'streakDay',
+            'lastClaimDayKey', 'mmr', 'rankTier', 'wins', 'losses', 'updatedAt'
+          ])
+        );
+
+      allow delete: if false;
+
+      // Isolated PII subcollection
+      match /private/{docId} {
+        allow get: if isVerified() && isValidId(userId) && isValidId(docId) && request.auth.uid == userId;
+        allow list: if false;
+
+        allow create: if isVerified()
+          && isValidId(userId)
+          && isValidId(docId)
+          && request.auth.uid == userId
+          && isValidUserPrivate(incoming())
+          && incoming().uid == request.auth.uid
+          && incoming().updatedAt == request.time;
+
+        allow update: if isVerified()
+          && isValidId(userId)
+          && isValidId(docId)
+          && request.auth.uid == userId
+          && isValidUserPrivate(incoming())
+          && incoming().uid == existing().uid
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt']);
+
+        allow delete: if false;
+      }
+    }
+
+    // Global Community Replays
+    match /communityReplays/{replayId} {
+      allow get: if isValidId(replayId);
+      allow list: if resource.data.likesCount >= 0;
+
+      allow create: if isVerified()
+        && isValidId(replayId)
+        && isValidCommunityReplay(incoming())
+        && incoming().replayId == replayId
+        && incoming().authorUid == request.auth.uid
+        && incoming().likesCount == 0
+        && incoming().createdAt == request.time;
+
+      allow update: if isVerified()
+        && isValidId(replayId)
+        && isValidCommunityReplay(incoming())
+        && incoming().replayId == existing().replayId
+        && incoming().authorUid == existing().authorUid
+        && incoming().createdAt == existing().createdAt
+        && (
+          (
+            request.auth.uid == existing().authorUid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['title'])
+          )
+          ||
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['likesCount'])
+            && incoming().likesCount == existing().likesCount + 1
+            && existsAfter(/databases/$(database)/documents/communityReplays/$(replayId)/likes/$(request.auth.uid))
+          )
+        );
+
+      allow delete: if isVerified()
+        && isValidId(replayId)
+        && existing().authorUid == request.auth.uid;
+
+      match /likes/{userId} {
+        allow get: if isValidId(replayId) && isValidId(userId);
+        allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+        allow create: if isVerified()
+          && isValidId(replayId)
+          && isValidId(userId)
+          && request.auth.uid == userId
+          && isValidReplayLike(incoming(), replayId, userId)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/communityReplays/$(replayId))
+          && getAfter(/databases/$(database)/documents/communityReplays/$(replayId)).data.likesCount
+             == get(/databases/$(database)/documents/communityReplays/$(replayId)).data.likesCount + 1;
+
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
+    // Competitive Multiplayer Rooms
+    match /multiplayerRooms/{roomId} {
+      allow get: if isValidId(roomId);
+      allow list: if isSignedIn() && (resource.data.status == 'waiting' || resource.data.hostUid == request.auth.uid || resource.data.guestUid == request.auth.uid);
+
+      allow create: if isVerified()
+        && isValidId(roomId)
+        && isValidMultiplayerRoom(incoming())
+        && incoming().roomId == roomId
+        && incoming().hostUid == request.auth.uid
+        && incoming().guestUid == ''
+        && incoming().status == 'waiting'
+        && incoming().winnerUid == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerified()
+        && isValidId(roomId)
+        && existing().status != 'finished'
+        && isValidMultiplayerRoom(incoming())
+        && incoming().roomId == existing().roomId
+        && incoming().hostUid == existing().hostUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (
+            existing().status == 'waiting'
+            && existing().guestUid == ''
+            && request.auth.uid != existing().hostUid
+            && incoming().guestUid == request.auth.uid
+            && incoming().status == 'active'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['guestUid', 'guestName', 'guestMmr', 'status', 'updatedAt'])
+          )
+          ||
+          (
+            existing().status == 'active'
+            && (request.auth.uid == existing().hostUid || request.auth.uid == existing().guestUid)
+            && incoming().status == 'finished'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'winnerUid', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isVerified()
+        && isValidId(roomId)
+        && existing().hostUid == request.auth.uid
+        && existing().status == 'waiting';
+    }
+  }
+}
